@@ -1,0 +1,207 @@
+# Content groups for We-Retail
+- DEF sitePrefix=weretail
+- DEF countryArr=[us, ca, ch, de, fr, es, it]
+- DEF permissionOfRole=:
+      editor: read,modify,create
+      publisher: read,modify,create,delete,acl_read
+      approver: read,modify,create,delete,acl_read
+
+
+- group_config:
+
+    - FOR country IN ${countryArr}:
+
+        - content-${sitePrefix}-${country}-for-editor:
+          - name: We-Retail ${country} content for editor 
+            isMemberOf: 
+            path: /home/groups/${sitePrefix}
+
+
+        - content-${sitePrefix}-${country}-for-publisher:
+          - name: We-Retail ${country} content for publisher 
+            isMemberOf: workflow-users
+            path: /home/groups/${sitePrefix}
+
+
+        - content-${sitePrefix}-${country}-for-approver:
+          - name: We-Retail ${country} content for approver 
+            isMemberOf: workflow-administrators
+            path: /home/groups/${sitePrefix}
+
+
+    - content-${sitePrefix}-language-masters-for-editor:
+      - name: We-Retail language-masters content for editor 
+        isMemberOf: 
+        path: /home/groups/${sitePrefix}
+
+
+    - content-${sitePrefix}-language-masters-for-publisher:
+      - name: We-Retail language-masters content for publisher 
+        isMemberOf: workflow-users
+        path: /home/groups/${sitePrefix}
+
+
+    - content-${sitePrefix}-language-masters-for-approver:
+      - name: We-Retail language-masters content for approver 
+        isMemberOf: workflow-administrators
+        path: /home/groups/${sitePrefix}
+
+
+
+
+- ace_config:
+
+    ## for language-masters
+    - FOR country IN ${countryArr}:
+        - FOR role IN ${keys(permissionOfRole)}:
+
+            - content-${sitePrefix}-${country}-for-${role}:
+                - path: /content/we-retail
+                  permission: allow
+                  actions: read
+                  privileges: 
+
+                - path: /content/we-retail/${country}
+                  permission: allow
+                  actions: ${permissionOfRole[role]}
+                  privileges: 
+
+                - path: /content/experience-fragments
+                  permission: allow
+                  actions: ${permissionOfRole[role]}
+                  privileges: 
+
+                - path: /content/dam/we-retail
+                  permission: allow
+                  actions: ${permissionOfRole[role]}
+                  privileges: 
+
+                - path: /content/dam/projects/we-retail
+                  permission: allow
+                  actions: ${permissionOfRole[role]}
+                  privileges: 
+
+                - path: /content/projects
+                  permission: allow
+                  actions: ${permissionOfRole[role]}
+                  privileges: 
+
+                # delete permission is necessary if you want to make a launch
+                - path: /content/launches
+                  permission: allow
+                  actions: read,modify,create,delete
+                  privileges: 
+
+                - path: /content/cq:tags/we-retail
+                  permission: allow
+                  actions: read
+                  privileges: 
+
+                - path: /conf/we-retail/settings/wcm/templates
+                  permission: allow
+                  actions: read
+                  privileges: 
+
+                - path: /conf/we-retail/settings/wcm/policies
+                  permission: allow
+                  actions: read
+                  privileges: 
+
+
+                - IF ${startsWith(role, "publisher") or startsWith(role, "approver")}:
+
+                    - path: /conf
+                      permission: allow
+                      privileges: crx:replicate
+                      restrictions:
+                        rep:glob: '/*/cloudconfigs'
+
+                    - path: /conf
+                      permission: allow
+                      privileges: crx:replicate
+                      restrictions:
+                        rep:glob: '/*/cloudconfigs/*'
+
+                    ## replicate permission of the template and the policiess is necessary if you want to publish pages
+                    - path: /conf/we-retail/settings/wcm/templates
+                      permission: allow
+                      privileges: crx:replicate
+
+                    - path: /conf/we-retail/settings/wcm/policies
+                      permission: allow
+                      privileges: crx:replicate
+
+
+    ## for language-masters
+    - FOR role IN ${keys(permissionOfRole)}:
+
+        - content-${sitePrefix}-language-masters-for-${role}:
+            - path: /content/we-retail
+              permission: allow
+              actions: ${permissionOfRole[role]}
+              privileges: 
+
+            - path: /content/experience-fragments
+              permission: allow
+              actions: ${permissionOfRole[role]}
+              privileges: 
+
+            - path: /content/dam/we-retail
+              permission: allow
+              actions: ${permissionOfRole[role]}
+              privileges: 
+
+            - path: /content/dam/projects/we-retail
+              permission: allow
+              actions: ${permissionOfRole[role]}
+              privileges: 
+
+            - path: /content/projects
+              permission: allow
+              actions: ${permissionOfRole[role]}
+              privileges: 
+
+            # delete permission is necessary if you want to make a launch
+            - path: /content/launches
+              permission: allow
+              actions: read,modify,create,delete
+              privileges: 
+
+            - path: /content/cq:tags/we-retail
+              permission: allow
+              actions: read,modify,create,delete
+              privileges: 
+
+            - path: /conf/we-retail/settings/wcm/templates
+              permission: allow
+              actions: read
+              privileges: 
+
+            - path: /conf/we-retail/settings/wcm/policies
+              permission: allow
+              actions: read
+              privileges: 
+
+
+            - IF ${startsWith(role, "publisher") or startsWith(role, "approver")}:
+
+                - path: /conf
+                  permission: allow
+                  privileges: crx:replicate
+                  restrictions:
+                    rep:glob: '/*/cloudconfigs'
+
+                - path: /conf
+                  permission: allow
+                  privileges: crx:replicate
+                  restrictions:
+                    rep:glob: '/*/cloudconfigs/*'
+
+                ## replicate permission of the template and the policiess is necessary if you want to publish pages
+                - path: /conf/we-retail/settings/wcm/templates
+                  permission: allow
+                  privileges: crx:replicate
+
+                - path: /conf/we-retail/settings/wcm/policies
+                  permission: allow
+                  privileges: crx:replicate

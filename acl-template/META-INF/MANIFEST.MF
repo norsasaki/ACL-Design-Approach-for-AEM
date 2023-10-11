@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Content-Package-Id: my_packages:acl-template
+Content-Package-Roots: /apps/netcentric/acl-template
+Content-Package-Type: application
+
