@@ -147,7 +147,6 @@ Global Fragmentは以下の２グループを定義する。
 
 ## テスト
 
-## How can we brush up the ACL design for Shimano-PJ
 
 
 
