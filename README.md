@@ -11,8 +11,9 @@
 
 ## ACL設計が難しい理由
 
-* AEMは不完全な Role-based access control(RBAC)
-  * Built-in groups が少なすぎ。貧弱すぎ。
+* そもそもACL設計は難しく知識と経験が必要
+* AEMは不完全な Role-based access control(RBAC)しか提供できていない
+  * Built-in Groups が少なすぎ。貧弱すぎ。
   * ビジネスユーザ向けの新しいRoleを定義するために、DatabaseレイヤーのRead/Write/Create/Delete権限から設計しないといけないのはおかしすぎるだろ
   * AEMは柔軟なコンテンツ管理が行える点が強み。一方、認可設計としてはコンテンツ設計をかっちり決めたい。相反するためAEMが認可管理が苦手なのは致し方ない。。。
     * Attribute Based Access Control(ABAC)なら両立可能？？
@@ -50,26 +51,79 @@ See [the slide of adaptTo() 2016](https://adapt.to/2016/presentations/adaptto201
 ### ACL・グループ設計の複雑化を避けるには？
 
 [Best Practices](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md)に従うことが最も大切。そうすることで、柔軟で見通しの良い設計が行える。
-その中でも重要なTipsは下記
+その中でも特に重要なTipsをリストアップする。
 
 * Use fragment groups for functional aspects and content access
 * Always use Allow statements. Avoid using a Deny statement
 * Consider access rights when designing you content structure
 
-### 複数グループを組み合わせた時の不具合を防ぐには
+### 複数グループを組み合わせた時の不具合を防ぐには？
 
-グループAとグループBで相反するACL設定がされており、グループA、Bの両方にユーザが所属した場合にACLが競合し期待する動作にならないことがある。
+グループAに`dent`ルール、グループBに`allow`ルールが設定がされており、グループA、Bの両方にユーザが所属した場合にACLが競合し期待する動作にならないことが問題となる。
+※一番最後に設定されたACLが勝つ
+By default ACEs with denies are sorted up to the top of the list, this follows the best practice to order denies always before allows
+
 競合を避けるためには
 * `deny`ルールはトップ階層のノードにのみ定義する
-* 下層階層には`allow`ルールのみを定義し、極力`deny`ルール使わない
+* 下層階層には`allow`ルールのみを定義し、`deny`ルール使わない
 
 ![](./img/README_2023-10-12-13-23-35.png)
+
+#### 実装例
+
+下記設計の実装を考えてみる
+
+![](./img/acl-design-sample.drawio.svg)
+
+
+* 普通にACL設定すると子ノードに継承されてしまう。
+* そのため`allow`のみで実装するには子ノードに継承されないACL設定方法が必要
+* 子ノードに継承させずに親ノードにのみACL設定をするためは以下のイディオムを使う
+
+```
+# The `deny` rules should be defined in fragment-restrict-for-everyone
+- path: /content
+  permission: deny
+  actions: 
+  privileges: jcr:all
+  repGlob: 
+
+- path: /content
+  permission: allow
+  actions: read,modify,create,delete
+  privileges: 
+  repGlob: ""  # matches node /foo only (no descendants, not even properties)
+
+- path: /content
+  permission: allow
+  actions: read,modify,create,delete
+  privileges: 
+  repGlob: /jcr:*
+```
+
+* このイディオムを使って緑色ページ用のルールを定義した場合のサンプルConfig
+* 他のConfigはこちらを参照
+  * ユーザがページ追加できず保守性が低いので、実際のプロジェクトではもっとACLが実装しやすいノード階層に設計するべき。
+
+```
+       - FOR path IN [/content/we-retail, /content/we-retail/A1]:
+           - path: ${path}
+             permission: allow
+             actions: 
+             privileges: jcr:read
+             repGlob: ""
+ 
+           - path: ${path}
+             permission: allow
+             actions: 
+             privileges: jcr:read
+             repGlob: /jcr:*
+```
 
 ### 設計書の陳腐化を防ぐアイデア
 
 AC Toolを使えばACLをYAMLとして定義できる
 そしてYAMLにはコメントアウトを記述できるので、ACL設計に対してコメントを残すことで、YAMLファイルでACL設計書を代用することができる。
-（クライアントがExcelの設計書を作れというかもしれないが）
 
 ![Alt text](./img/README_2023-10-12-13-23-36.png)
 
@@ -83,11 +137,17 @@ AC Toolを使えばACLをYAMLとして定義できる
 
 ### 標準機能に必要なACLを適切に把握するアイデア
 
-* AEMはいくつかのBuilt-in groupを提供しており、ビジネス要件に応じて、これらのグループを拡張・または参考にすると良い。
-* AC Toolを用いると、AEMないの全グループのACLをYAML形式で出力ができるので、Built-in groupに定義されているACLを参照することで、ACL設計の抜け漏れを減らすことができる。
-  * ページ公開するにはページ自体の`Replicate`権限に加えて、テンプレート、ポリシーの`Replicate`権限も必要
+* AEMはいくつかのBuilt-in Groupを提供しており、ビジネス要件に応じて、これらのグループを拡張・または参考にすると良い。
+* AC Toolを用いると、AEM内の全グループのACLをYAML形式で出力ができるので、Built-in Groupに定義されているACLを参照することで、ACL設計の抜け漏れを減らすことができる。
+  * 例えば、ページ公開するにはページ自体の`Replicate`権限に加えて、テンプレート、ポリシーの`Replicate`権限も必要
 
 ### ACLの効率的なテスト方法
+
+* テストコードを書き網羅的なACLテストを行う
+  * CRUD操作は`curl`などで行える
+  * マニュアルテストは補助として実施する。
+* use [access-control-validator](https://github.com/Netcentric/access-control-validator)
+
 
 
 
@@ -103,12 +163,16 @@ AC Toolを使えばACLをYAMLとして定義できる
 ## the Best Practice is great, but...
 
 But, it tends to be complex if we completely follow this appoarch.
-So, We recommend a simpler approach, which we will describe later.
+So, We recommend a simpler desing, which we will describe later.
 
-## A simplified approach #1
+## I suggest that the more simplified design
 
-Best Practice では、各機能に対応したfragmentグループを作成し、ロールグループに必要な機能のみをアサインべきだと言っている。
-しかし、これをプロジェクト毎に設計・実装するのは大変だし、本来はAEM製品側がfragmentグループを提供すべきだが、現実そうはなっていない。
+![](./img/simplified-approach.drawio.svg)
+
+### A simplified design #1
+
+Best Practice では、各機能に対応したFunctional Fragmentグループを作成し、ロールグループに必要な機能のみをアサインべきだと言っている。
+しかし、これをプロジェクト毎に設計・実装するのは大変だし、本来はAEM製品側がFunctional Fragmentグループを提供すべきだが、現実そうはなっていない。
 
 幸いにも、多くのAEMプロジェクトで求められるロールは下記の３種類かその変化系だけだ。
 * 編集者
@@ -116,17 +180,13 @@ Best Practice では、各機能に対応したfragmentグループを作成し�
 * 承認者
   
 そしてこれらのロールは content-authors, dam-users, workflow-usersなどのbuit-inグループを組み合わせることで十分に表現できる。
-そのためbuilt-inグループをfragmentグループの代用とすることで設計にかかるコストと時間を省くことができる。
+そのためFunctional Fragmentは作らず、built-inグループをUser Role fragmentグループの代用とすれば設計にかかるコストと時間を省くことができる。
 
-### Useful built-in groups
+### Useful Built-in Groups
 
-再利用性の高いbuilt-in groupを下記表にまとめる。
-例えばWebサイトの編集に必要な機能であれば、content-authorsがカバーしている。
-しかし、built-inグループはアクセス許可を与えたくないノードへのアクセス権を既に持っている場合がある。
-例えばcontent-authorsは/content配下の読み取り・書き込み権限を持っているが、/content配下の特定のサイトにのみアクセス権を付与したい、という要件は非常にポピュラーだ。
-これに対する対策は別のスライドで説明する。
+再利用性の高いBuilt-in Groupを下記表にまとめる。
 
-| Built-in groups         | Description                                                                                                                                                                        |
+| Built-in Groups         | Description                                                                                                                                                                        |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | contributor             | Basic privileges that allow the user to write content (as in, functionality only).                                                                                                 |
 | content-authors         | Group responsible for content editing. Requires read, modify, create, and delete permissions.                                                                                      |
@@ -140,23 +200,42 @@ Best Practice では、各機能に対応したfragmentグループを作成し�
 
 Ref: [User Administration and Security](https://experienceleague.adobe.com/docs/experience-manager-65/administering/security/security.html?lang=en)
 
-### built-in groupsを必ず使用しないといけないケース
 
-特定のグループに所属しているかどうかを条件にUI制御している場合がある。
+しかし、built-inグループはアクセス許可を与えたくないノードへのアクセス権を既に持っている場合がある。
+例えばcontent-authorsは/content配下の読み取り・書き込み権限を持っているが、/content配下の特定のサイト以外のアクセス権は付与したくない、という要件は非常にポピュラーだ。
+その場合は`fragment-restrict-for-everyone`に`/content`を`deny`するルールを定義することでBuilt-in Groupの持つACLをリセットすることができる。
+
+下図に示すとおり、ACツールはACLの常に一番下に新しいルールを追加する。そしてACLが競合した場合、リストの下に位置するルールが優先される。
+この特徴を利用することで、CSSリセットのようにBuilt-in Groupに定義されているACLをリセットすることができる。
+具体的には下図の場合、`content-authors`と`fragment-restrict-for-everyone`ともに`/content`に対してのACLが定義されている。
+`content-authors`と`fragment-restrict-for-everyone`の両方に所属するとACLが競合するが、`fragment-restrict-for-everyone`のルールがよりACLの下の位置に定義されているので優先される。
+
+![](./img/priority-of-acl.png)
+
+
+
+### Built-in Groupsを必ず使用しないといけないケース
+
+A simplified design #1にはもう一つメリットがある。
+AEMはACL以外に"特定のグループに所属しているかどうか"を条件に認可制御する場合がある。
 例えば、下記のUIは `workflow-users` に所属する場合のみ表示される。
-こうした点を踏まえてえも、fragment groupを設計するよりも、built-in group を活用する方法を確立する方が有用だと考える。
+そのため Language Copy を正しく使えるようにするためには `workflow-users` に所属する必要がある。
+
+![](./img/sample-ui-managed-by-groups.png)
+
+
+こうした点を踏まえてえも、fragment groupを設計するよりも、Built-in Group を活用する方法を確立する方が有用だと考える。
 
 ```
+# /libs/cq/translation/cloudservices/rendercondition/isWorkflowUser/isWorkflowUser.jsp
  if (checkUserGroup(resolver, userSession, workflow_users)) {
      return true;
  } 
 ```
 
-Ref: 
-* /libs/cq/translation/cloudservices/rendercondition/isWorkflowUser/isWorkflowUser.jsp
-* [Render Condition](https://developer.adobe.com/experience-manager/reference-materials/6-5/granite-ui/api/jcr_root/libs/granite/ui/docs/server/rendercondition.html#)
+Ref: [Render Condition](https://developer.adobe.com/experience-manager/reference-materials/6-5/granite-ui/api/jcr_root/libs/granite/ui/docs/server/rendercondition.html#)
 
-## A simplified approach #2
+## A simplified design #2
 
 Best Practice では、Read/write access to contents はcontent groupによって提供されるべきだと言っている。
 基本的に同意するが、下記の点でより実用的なアプローチがあると考える。
@@ -164,7 +243,7 @@ Best Practice では、Read/write access to contents はcontent groupによっ�
 * コンテンツに対してどのアクセス権を与えるかはビジネス要件で決まる。しかし、ロールとコンテンツに応じて求められる権限は細かく変わるため、Read/Writeという観点でfragmentグループを作成すると、グループ数が非常に多くなることが懸念される。
 * コンテンツを公開することができるかどうかは直感的には機能観点だが、AEM内部ではACLの１つとして制御される。そのため、公開権限自体はfragment groupではなく、content groupで管理する方が見通しが良い
 
-そこでロールに１対１対応するようにcontent groupを作り、そのグループでそのロールに必要なコンテンツに対するACLを全て管理する方が未投資が良い。
+そこでロールに１対１対応するようにcontent groupを作り、そのグループでそのロールに必要なコンテンツに対するACLを全て管理する方が見通しが良い。
 また、公開権限についてもcontent group で管理する。
 
 ## ケーススタディ | 要件
@@ -207,7 +286,7 @@ Global Fragmentは以下の２グループを定義する。
   + 下記のユーザコンテンツ領域へのアクセス禁止するACLを定義
     - /content, /content/experience-fragments, /content/projects, /content/dam, 
     - /content/dam/projects, /content/dam/collections, /content/cq:tags, /conf
-  + Built-in groupに定義されたACLで上書きが必要なものもここで定義
+  + Built-in Groupに定義されたACLで上書きが必要なものもここで定義
 * fragment-basic-allow
   + 全サイト、全グループ共通で必要な`Allow`ルールを定義
   + 主に、親ノードへのアクセスは許可するが、子ノードへのアクセス権限を与えず、親ノードのみのアクセス権を与える時のルールを記載
