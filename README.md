@@ -1,31 +1,33 @@
 # ACL-Design-Approach-for-AEM
 
-## AEMのACL設計のよくある失敗
+## Common mistakes in ACL design for AEM
 
-1. 新しい要望が出るたびにACL・グループ設計が複雑化し、工数や不具合の増加につながる。
-2. 複数グループを組み合わせたときのテスト工数が膨大に増加する。またはテストし切れず運用後に不具合が発覚する。
-3. 設計書の更新まで手が回らず、設計と実装にGAPが生まれる。誰も正しいACL設計を把握出来なくなる。
-4. 完全性・冪等性を維持したACLのリリース方法が確立されていない。それゆえ環境毎にACL設定が微妙に異なる。
-5. AEMの各標準機能が正常に動作するために、どのようなACLが必要か把握出来ていない。そのため運用後に標準機能が動作しないことが発覚する。
-6. テストを手動で実施している。そのため網羅性・テスト品質ともに高くならない。
+1. each time a new request is made, the ACL/group design becomes more complex, leading to an increase in man-hours and defects
+2. When multiple groups are combined, the number of man-hours required for testing increases enormously. Or, defects are discovered after operation due to inadequate testing.
+3. GAPs are created between design and implementation due to lack of time to update design documents. No one will be able to grasp the correct ACL design.
+4. There is no established method for releasing ACLs while maintaining integrity and power. Therefore, ACL settings differ slightly from environment to environment.
+5. it is not known what kind of ACLs are necessary for each standard function of AEM to work properly. Therefore, it is discovered after operation that standard functions do not work.
+6. Testing is performed manually. As a result, both completeness and test quality are not high.
 
-## ACL設計が難しい理由
+## Why ACL design is difficult
 
-* そもそもACL設計は難しく知識と経験が必要
-* AEMは不完全な Role-based access control(RBAC)しか提供できていない
-  * Built-in Groups が少なすぎ。貧弱すぎ。
-  * ビジネスユーザ向けの新しいRoleを定義するために、DatabaseレイヤーのRead/Write/Create/Delete権限から設計しないといけないのはおかしすぎるだろ
-  * AEMは柔軟なコンテンツ管理が行える点が強み。一方、認可設計としてはコンテンツ設計をかっちり決めたい。相反するためAEMが認可管理が苦手なのは致し方ない。。。
-    * Attribute Based Access Control(ABAC)なら両立可能？？
-* 「どの機能を利用できるか」と「どのコンテンツにアクセスできるか」をACLという同じ仕組みで制御する仕様のため、ACL設計をする上で認可モデルの深い理解が求められる
-* ACLをコードで管理できない。
+* ACL design is difficult to begin with and requires knowledge and experience
+* AEM provides only incomplete Role-based access control (RBAC)
+  * Too few Built-in Groups. Too few Built-in Groups, too poor.
+  * It's too strange to have to design from Read/Write/Create/Delete permission of Database layer to define a new Role for business users.
+  * AEM's strength is its flexible content management. On the other hand, for authorization design, we need to decide the content design tightly. Because of the conflict, it is no wonder that AEM is not good at authorization management.
+    * Is Attribute Based Access Control (ABAC) compatible?
+* Because "which functions can be used" and "which contents can be accessed" are controlled by the same mechanism called ACL, a deep understanding of the authorization model is required when designing ACLs.
+* ACLs cannot be managed by code.
+
 
 ## Best Practice for AEM ACL Design
 
-1. [NetcentricのAC Tool](https://github.com/Netcentric/accesscontroltool)を使用する。
-2. [Best Practices](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md)に従う。
-3. フォルダ／ノード設計時にACL設計も同時に行い、シンプルなACL設計になるようにフォルダ／ノード構造を設計する。
-4. 複雑なACL設計を避けられるように要件定義・設計をする。複雑なACLが求められる要件はそのデメリットをしっかり伝え、必須か否かクライアントによく検討してもらう
+1. use [Netcentric's AC Tool](https://github.com/Netcentric/accesscontroltool) 
+2. Follow [Best Practices](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md). 
+3. design the folder/node structure so that the ACL design is done at the same time as the folder/node design, and the ACL design is simple. 
+4. Define and design requirements so that complex ACL design can be avoided. If complex ACLs are required, clearly explain their disadvantages and ask the client to carefully consider whether or not they are necessary.
+
 
 ## What's AC Tool
 
@@ -44,40 +46,38 @@
 * built-in expression language to reduce rule duplication
 See [the slide of adaptTo() 2016](https://adapt.to/2016/presentations/adaptto2016-ac-tool-jochen-koschorke-roland-gruber.pdf) for details
 
-
-
 ## How can AC tool resolve the problems?
 
-### ACL・グループ設計の複雑化を避けるには？
+### How to avoid complications in ACL/group design?
 
-[Best Practices](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md)に従うことが最も大切。そうすることで、柔軟で見通しの良い設計が行える。
-その中でも特に重要なTipsをリストアップする。
+It is most important to follow [Best Practices](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md). 
+By doing so, you can create a flexible and prospective design.
+The following is a list of some of the most important tips.
 
 * Use fragment groups for functional aspects and content access
 * Always use Allow statements. Avoid using a Deny statement
 * Consider access rights when designing you content structure
 
-### 複数グループを組み合わせた時の不具合を防ぐには？
 
-グループAに`deny`ルール、グループBに`allow`ルールが設定がされており、グループA、Bの両方にユーザが所属した場合にACLが競合し期待する動作にならないことが問題となる。
-※一番最後に設定されたACLが勝つ
-By default ACEs with denies are sorted up to the top of the list, this follows the best practice to order denies always before allows
+### How can we prevent problems when combining multiple groups?
 
-競合を避けるためには
-* `deny`ルールはトップ階層のノードにのみ定義する
-* 下層階層には`allow`ルールのみを定義し、`deny`ルール使わない
+The problem is that if a `deny` rule is set for group A and an `allow` rule for group B, and a user belongs to both groups A and B, the ACLs will conflict and the expected behavior might not occur.
+
+To avoid conflicts
+* define `deny` rules only for the top level nodes
+* Define only `allow` rules for lower level nodes, and don't use `deny` rules.
 
 
-#### 実装例
+#### Example 
 
-下記設計の実装を考えてみる
+Consider the implementation of the following design
 
 ![](./img/acl-design-sample.drawio.svg)
 
+* If ACLs are set normally, they will be inherited by child nodes.
+* Therefore, to implement with only `allow`, we need a way to set ACLs that are not inherited by child nodes
+* To set ACLs only on the parent node without allowing child nodes to inherit, use the following idiom
 
-* 普通にACL設定すると子ノードに継承されてしまう。
-* そのため`allow`のみで実装するには子ノードに継承されないACL設定方法が必要
-* 子ノードに継承させずに親ノードにのみACL設定をするためは以下のイディオムを使う
 
 ```
 # The `deny` rules should be defined in fragment-restrict-for-everyone
@@ -100,9 +100,9 @@ By default ACEs with denies are sorted up to the top of the list, this follows t
   repGlob: /jcr:*
 ```
 
-* このイディオムを使って緑色ページ用のルールを定義した場合のサンプルConfig
-* 他のConfigは[こちら](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example)を参照
-  * ユーザがページ追加できず保守性が低いので、実際のプロジェクトではもっとACLが実装しやすいノード階層に設計するべき。
+* Sample Config for defining rules for green pages using this idiom
+* See [here](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example) for other configs
+  * The actual project should be designed with a node hierarchy that is more easily implemented by ACLs, since users cannot add pages and it is not maintainable.
 
 ```
        - FOR path IN [/content/we-retail, /content/we-retail/A1]:
@@ -119,33 +119,38 @@ By default ACEs with denies are sorted up to the top of the list, this follows t
              repGlob: /jcr:*
 ```
 
-### 設計書の陳腐化を防ぐアイデア
+### Ideas to prevent obsolete design documents
 
-AC Toolを使えばACLをYAMLとして定義できる
-そしてYAMLにはコメントアウトを記述できるので、ACL設計に対してコメントを残すことで、YAMLファイルでACL設計書を代用することができる。
+The AC Tool allows you to define ACLs as YAML.
+And since YAML can contain comment-outs, you can substitute an ACL design document with a YAML file by leaving comments for the ACL design.
 
 ![Alt text](./img/comment-in-yaml.png)
 
 
-### 完全性・冪等性を維持したACLのリリース方法
 
-* AC Toolを使うと、ACLをコードとして管理し、Javaのコードと同じようにGit管理および資源移送が可能になる。
-* また完全性・冪等性も備えるので、安心してACLをリリースすることができる。
+### How to release ACLs while maintaining integrity and power
 
-以前はACS CommonsのACL Packagerというツールが主流であったが、完全性・冪等性を備えておらず、ACL PackagerでACLを移送すると知らず知らずのうちに、環境毎に差が出ることが多かった。
+* The AC Tool allows you to manage ACLs as code, and enables Git management and resource transfer just like Java code.
+* It also provides integrity and idempotency, so ACLs can be released with confidence.
 
-### 標準機能に必要なACLを適切に把握するアイデア
+The ACL Packager tool from ACS Commons used to be the mainstream tool, but it did not have integrity and power, and when ACLs were transferred using ACL Packager, differences often appeared between environments unintentionally.
 
-* AEMはいくつかのBuilt-in Groupを提供しており、ビジネス要件に応じて、これらのグループを拡張・または参考にすると良い。
-* AC Toolを用いると、AEM内の全グループのACLをYAML形式で出力ができるので、Built-in Groupに定義されているACLを参照することで、ACL設計の抜け漏れを減らすことができる。
-  * 例えば、ページ公開するにはページ自体の`Replicate`権限に加えて、テンプレート、ポリシーの`Replicate`権限も必要
 
-### ACLの効率的なテスト方法
 
-* テストコードを書き網羅的なACLテストを行う
-  * CRUD操作は`curl`などで行える
-  * マニュアルテストは補助として実施する。
+### Ideas for properly identifying ACLs required for standard functions.
+
+* AEM provides several Built-in Groups, which can be extended or referenced depending on business requirements.
+* The AC Tool can output ACLs for all groups in AEM in YAML format, so you can reduce omissions in ACL design by referring to the ACLs defined in the Built-in Groups.
+  * For example, to publish a page, the `Replicate` authority of the template and policy is required in addition to the `Replicate` authority of the page itself.
+
+
+### How to efficiently test ACLs
+
+* Write test code and perform exhaustive ACL testing
+  * CRUD operations can be done with `curl`, etc.
+  * Manual testing should be performed as an aid.
 * use [access-control-validator](https://github.com/Netcentric/access-control-validator)
+
 
 
 
@@ -161,8 +166,8 @@ AC Toolを使えばACLをYAMLとして定義できる
 
 ## the Best Practice is great, but...
 
-でも実際にBest Practiceにしたがって設計するとグループが多くなり複雑になりやすい。
-そのためもっとシンプルな設計案を紹介したい
+But, when actually designing according to Best Practice, the number of groups tends to be large and ACL design will be complex.
+Therefore, we would like to introduce a more simpler design.
 
 ## I suggest that the more simplified design
 
@@ -170,20 +175,22 @@ AC Toolを使えばACLをYAMLとして定義できる
 
 ### More simplified design #1
 
-Best Practice では、各機能に対応したFunctional Fragmentグループを作成し、ロールグループに必要な機能のみをアサインべきだと言っている。
-しかし、これをプロジェクト毎に設計・実装するのは大変だし、本来はAEM製品側がFunctional Fragmentグループを提供すべきだが、現実そうはなっていない。
+Best Practice suggests that Functional Fragment Groups should be created for each function, and only the necessary functions should be assigned to each role group.
+However, it is difficult to design and implement this for each project, and although the AEM product should provide Functional Fragment Groups, this is not the case in reality.
 
-幸いにも、多くのAEMプロジェクトで求められるロールは下記の３種類かその変化系だけだ。
-* 編集者
-* 公開者
-* 承認者
+Fortunately, the only roles required in many AEM projects are the following three types or their variants.
+* Editor
+* Publisher
+* Approver
   
-そしてこれらのロールは content-authors, dam-users, workflow-usersなどのbuit-inグループを組み合わせることで十分に表現できる。
-そのためFunctional Fragmentは作らず、built-inグループをUser Role fragmentグループの代用とすれば設計にかかるコストと時間を省くことができる。
+And these roles can be adequately represented by combining buit-in groups such as content-authors, dam-users, and workflow-users.
+Therefore, if you do not create a Functional Fragment and use the built-in group as a substitute for the User Role fragment group, you can save cost and time in design.
+
+
 
 ### Useful Built-in Groups
 
-再利用性の高いBuilt-in Groupを下記表にまとめる。
+The table below summarizes the reusable Built-in Groups.
 
 | Built-in Groups         | Description                                                                                                                                                                        |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -200,35 +207,39 @@ Best Practice では、各機能に対応したFunctional Fragmentグループ�
 Ref: [User Administration and Security](https://experienceleague.adobe.com/docs/experience-manager-65/administering/security/security.html?lang=en)
 
 
-しかし、built-inグループはアクセス許可を与えたくないノードへのアクセス権を既に持っている場合がある。
-例えばcontent-authorsは/content配下の読み取り・書き込み権限を持っているが、/content配下の特定のサイト以外のアクセス権は付与したくない、という要件は非常にポピュラーだ。
-その場合は`fragment-restrict-for-everyone`に`/content`を`deny`するルールを定義することでBuilt-in Groupの持つACLをリセットすることができる。
+However, a built-in group may already have access rights to nodes to which it does not want to grant permissions.
+For example, it is a very popular requirement that content-authors have read and write permissions under /content, but do not want to grant access rights except to specific sites under /content.
+In such a case, you can reset the ACL of the Built-in Group by defining a rule to `deny` `/content` in `fragment-restrict-for-everyone`.
 
-下図に示すとおり、ACツールはACLの常に一番下に新しいルールを追加する。そしてACLが競合した場合、リストの下に位置するルールが優先される。
-この特徴を利用することで、CSSリセットのようにBuilt-in Groupに定義されているACLをリセットすることができる。
-具体的には下図の場合、`content-authors`と`fragment-restrict-for-everyone`ともに`/content`に対してのACLが定義されている。
-`content-authors`と`fragment-restrict-for-everyone`の両方に所属するとACLが競合するが、`fragment-restrict-for-everyone`のルールがよりACLの下の位置に定義されているので優先される。
+As shown in the figure below, the AC tool always adds a new rule to the bottom of the ACL. And when ACLs conflict, the rule located at the bottom of the list takes precedence.
+By using this feature, ACLs defined in the Built-in Group can be reset like CSS reset.
+Specifically, in the figure below, both `content-authors` and `fragment-restrict-for-everyone` have ACLs defined for `/content`.
+Belonging to both `content-authors` and `fragment-restrict-for-everyone` will cause ACL conflicts, but the rule for `fragment-restrict-for-everyone` takes precedence because it is defined at a lower position in the ACL. The `fragment-restrict-for-everyone` rule has priority because it is defined lower in the ACL.
+
+
 
 ![](./img/priority-of-acl.png)
 
+We know that we can reset the ACLs that the Built-in Groups have. So, how can we give arbitrary `allow` rules from that state?
+This is very easy, just define the necessary `allow` rules in the AC Tools.
 
-Built-in Groupsの持つACLをリセットできるのはわかった。では、その状態から任意の`allow`ルールを与えるにはどうすれば良いか。
-これはとても簡単で、必要な`allow`ルールをAC Toolsで定義するだけで良い。
+AC Tools will first register the `deny` rules defined in the YAML file, and then the `allow` rules.
+As mentioned earlier, the `allow` rule takes precedence because the rule that is positioned at the bottom of the list takes precedence.
 
-ACツールはYAMLファイルの中で定義されている`deny`ルールをまず登録し、その後に`allow`ルールを登録する。
-先述の通り、リストの下に位置するルールが優先されるので、`allow`ルールが優先される。
 
-### Built-in Groupsを必ず使用しないといけないケース
+### Cases where Built-in Groups must be used
 
-More simplified design #1にはもう一つメリットがある。
-AEMはACL以外に"特定のグループに所属しているかどうか"を条件に認可制御する場合がある。
-例えば、下記のUIは `workflow-users` に所属する場合のみ表示される。
-そのため Language Copy を正しく使えるようにするためには `workflow-users` に所属する必要がある。
+More simplified design #1 has another advantage.
+In addition to ACLs, AEM may control authorization based on "whether or not a user belongs to a specific group".
+For example, the following UI is displayed only if you belong to `workflow-users`.
+Therefore, you need to belong to `workflow-users` to be able to use Language Copy correctly.
+
 
 ![](./img/sample-ui-managed-by-groups.png)
 
 
-こうした点を踏まえてえも、fragment groupを設計するよりも、Built-in Group を活用する方法を確立する方が有用だと考える。
+In light of this, it is more useful to establish a method of utilizing built-in groups rather than designing fragment groups.
+
 
 ```
 # /libs/cq/translation/cloudservices/rendercondition/isWorkflowUser/isWorkflowUser.jsp
@@ -241,55 +252,62 @@ Ref: [Render Condition](https://developer.adobe.com/experience-manager/reference
 
 ## More simplified design #2
 
-Best Practice では、Read/write access to contents はcontent groupによって提供されるべきだと言っている。
-基本的に同意するが、下記の点でより実用的なアプローチがあると考える。
+Best Practice says that read/write access to contents should be provided by content groups.
+While we agree in principle, we believe there is a more practical approach in the following respects.
 
-* コンテンツに対してどのアクセス権を与えるかはビジネス要件で決まる。しかし、ロールとコンテンツに応じて求められる権限は細かく変わるため、Read/Writeという観点でfragmentグループを作成すると、グループ数が非常に多くなることが懸念される。
-* コンテンツを公開することができるかどうかは直感的には機能観点だが、AEM内部ではACLの１つとして制御される。そのため、公開権限自体はfragment groupではなく、content groupで管理する方が見通しが良い
+* Business requirements determine which access rights are granted to content. However, since the required permissions vary in detail depending on roles and content, there is concern that creating fragment groups in terms of Read/Write will result in a very large number of groups.
+* Whether content can be published or not is intuitively a functional perspective, but inside AEM it is controlled as one of the ACLs. Therefore, it is better to manage the publishing authority itself in the content group, not in the fragment group, for better visibility.
 
-そこでロールに１対１対応するようにcontent groupを作り、そのグループでそのロールに必要なコンテンツに対するACLを全て管理する方が見通しが良い。
-また、公開権限についてもcontent group で管理する方が良い。
+Therefore, it is better to create a content group that corresponds to a role on a one-to-one basis, and to manage all ACLs for the contents necessary for that role in that group.
+It is also better to manage publishing privileges in the content group.
 
-## ケーススタディ | 要件
 
-下記要件のACL・グループ設計を考えてみる。
 
-* マルチサイト(We-Retail)
-* 本社がlanguage-masterのコンテンツを管理し、Live CopyおよびLanguage Copyを使って各国・言語へ展開する
-* 支社は自分が管轄するリージョンサイトのコンテンツを管理する。
-* ページ公開には必ず承認者の商品が必要
-* ページの編集者はページの作成・更新が可能
-* ページの公開者はページの作成・更新・削除および公開が可能
 
-## ケーススタディ | Global Fragments
+## Case Study | Requirements
 
-Global Fragmentは以下の２グループを定義する。
+Consider ACL and group design for the following requirements.
+
+* Multi-site (We-Retail)
+* Head office manages language-master content and deploys to each country/language using Live Copy and Language Copy.
+* Branch offices manage the contents of their own region sites.
+* Approver's product is always required to publish a page
+* Page editors can create and update pages
+* Page publishers can create, update, delete, and publish pages
+
+## Case Study | Global Fragments
+
+Global Fragment defines the following two groups
 
 * fragment-restrict-for-everyone
-  + `Deny`ルールのみを定義する。
-  + `Deny`ルールはこのグループ以外では原則定義してはならない。
-  + 下記のユーザコンテンツ領域へのアクセス禁止するACLを定義
-    - /content, /content/experience-fragments, /content/projects, /content/dam, 
+  + Define only `Deny` rule.
+  + Only `Deny` rules are defined in this group.
+  + Define ACLs to deny access to the following user content areas.
+     
     - /content/dam/projects, /content/dam/collections, /content/cq:tags, /conf
-  + Built-in Groupに定義されたACLで上書きが必要なものもここで定義
+  + ACLs defined in the Built-in Group that need to be overridden are also defined here
 * fragment-basic-allow
-  + 全サイト、全グループ共通で必要な`Allow`ルールを定義
-  + 主に、親ノードへのアクセスは許可するが、子ノードへのアクセス権限を与えず、親ノードのみのアクセス権を与える時のルールを記載
+  + Define `Allow` rules for all sites and groups.
+  + Mainly, rules for granting access to parent nodes, but not to child nodes, and only to parent nodes.
     - [White listing nodes](https://github.com/Netcentric/accesscontroltool/blob/develop/docs/BestPractices.md#white-listing-nodes)
 
-## ケーススタディ | Content Fragments
 
-Content Fragmentsは下記の方針で作成する。
+## Case Study | Content Fragments
 
-* language-mastersおよび各リージョンサイトの管理者は異なるため、リージョン毎にContent グループを分ける
-* さらに各リージョン毎に編集者、公開者、承認者というロールを分けて作成する。
-  + content-${sitePrefix}-${country}-for-${role}
-* 各ロールで付与するACLは下記
-  + acl_read権限を与えないと
+Content Fragments should be created according to the following policy
+
+* Separate Content groups for each region, since language-masters and administrators of each region site are different.
+* Create separate roles for editors, publishers, and approvers for each region.
+  + `content-${sitePrefix}-${country}-for-${role}`
+* ACLs to be assigned to each role are as follows
+     
     | role      | priviledge                         |
     | --------- | ---------------------------------- |
     | editor    | read,modify,create                 |
-    | publisher | read,modify,create,delete |
-    | approver  | read,modify,create,delete |
+    | publisher | read,modify,create,delete,acl_read |
+    | approver  | read,modify,create,delete,acl_read |
 
-* ケーススタディのサンプルコンフィグは[こちら](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example)を参照
+     
+
+* See [here](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example) for a sample configuration of a case study
+
