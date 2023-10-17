@@ -101,7 +101,7 @@ By default ACEs with denies are sorted up to the top of the list, this follows t
 ```
 
 * このイディオムを使って緑色ページ用のルールを定義した場合のサンプルConfig
-* 他のConfigはこちらを参照
+* 他のConfigは[こちら](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example)を参照
   * ユーザがページ追加できず保守性が低いので、実際のプロジェクトではもっとACLが実装しやすいノード階層に設計するべき。
 
 ```
@@ -292,4 +292,4 @@ Content Fragmentsは下記の方針で作成する。
     | publisher | read,modify,create,delete |
     | approver  | read,modify,create,delete |
 
-* ケーススタディのサンプルコンフィグはこちらを参照
+* ケーススタディのサンプルコンフィグは[こちら](https://github.com/norsasaki/ACL-Design-Approach-for-AEM/releases/tag/actool-example)を参照
