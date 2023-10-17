@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Content-Package-Id: my_packages:actool-example
+Content-Package-Roots: /apps/actool-example
+Content-Package-Type: application
+

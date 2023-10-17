@@ -1,0 +1,206 @@
+# System configuration (all global fragments)
+
+- group_config:
+
+    - fragment-basic-allow:
+
+       - name: 
+         memberOf:
+         path: f
+
+    - fragment-restrict-for-everyone:
+
+       - name: 
+         memberOf:
+         path: f
+
+
+
+
+- ace_config:
+
+
+    - fragment-basic-allow:
+
+       - path: /
+         permission: allow
+         actions: read
+         privileges: 
+         repGlob: 
+
+      ## allows access to nodes that are readable for all users
+      ### /content
+       - path: /content
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/experience-fragments
+       - path: /content/experience-fragments
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/experience-fragments
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/dam
+       - path: /content/dam
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/dam
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/dam/projects
+       - path: /content/dam/projects
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/dam/projects
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/dam/collections
+       - path: /content/dam/collections
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/dam/collections
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/projects
+       - path: /content/projects
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/projects
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /content/cq:tags
+       - path: /content/cq:tags
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /content/cq:tags
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+      ### /conf
+       - path: /conf
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: ""
+
+       - path: /conf
+         permission: allow
+         actions: 
+         privileges: jcr:read,jcr:readAccessControl
+         repGlob: /jcr:*
+
+
+    - fragment-restrict-for-everyone:
+
+      # reset acls of the user contents for the built-in groups
+       - path: /content
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/experience-fragments
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/dam
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/dam/projects
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/dam/collections
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/projects
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /content/cq:tags
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+       - path: /conf
+         permission: deny
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+
+
+
+

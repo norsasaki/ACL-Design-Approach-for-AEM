@@ -1,0 +1,24 @@
+# Role groups for We-Retail
+- DEF sitePrefix=weretail
+- DEF countryLangMasterArr=[us, ca, ch, de, fr, es, it, language-masters]
+
+
+- group_config:
+      - FOR country IN ${countryLangMasterArr}:
+
+          - ${sitePrefix}-${country}-editor:
+            - name: We-Retail ${country} editor 
+              isMemberOf: fragment-restrict-for-everyone,fragment-basic-allow,content-authors,content-weretail-${country}-for-editor
+              path: /home/groups/${sitePrefix}
+
+          - ${sitePrefix}-${country}-publisher:
+            - name: We-Retail ${country} publisher 
+              isMemberOf: fragment-restrict-for-everyone,fragment-basic-allow,content-authors,workflow-users,content-weretail-${country}-for-publisher
+              path: /home/groups/${sitePrefix}
+
+          - ${sitePrefix}-${country}-approver:
+            - name: We-Retail ${country} approver 
+              isMemberOf: fragment-restrict-for-everyone,fragment-basic-allow,content-authors,workflow-administrators,content-weretail-${country}-for-approver
+              path: /home/groups/${sitePrefix}
+
+

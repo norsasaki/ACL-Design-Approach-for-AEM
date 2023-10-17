@@ -1,0 +1,76 @@
+# Role groups for We-Retail
+
+# /content/we-retail/language-masters/it/A1
+# /content/we-retail/language-masters/it/F1
+# /content/we-retail/language-masters/it/A1/B2
+# /content/we-retail/language-masters/it/A1/E2
+# /content/we-retail/language-masters/it/A1/B2/C3
+# /content/we-retail/language-masters/it/A1/B2/D3
+
+
+- group_config:
+    - sample-group:
+       - name: sample group
+         isMemberOf: fragment-restrict-for-everyone,fragment-basic-allow
+
+
+- ace_config:
+
+    - sample-group:
+
+      ## allows access to nodes that are readable for all users
+      ### /content
+       - FOR path IN [/content/we-retail, /content/we-retail/A1]:
+           - path: ${path}
+             permission: allow
+             actions: 
+             privileges: jcr:read
+             repGlob: ""
+ 
+           - path: ${path}
+             permission: allow
+             actions: 
+             privileges: jcr:read
+             repGlob: /jcr:*
+
+       - FOR path IN [/content/we-retail/A1/B2]:
+           - path: ${path}
+             permission: allow
+             actions: read,modify
+             privileges: 
+             repGlob: ""
+ 
+           - path: ${path}
+             permission: allow
+             actions: read,modify
+             privileges: 
+             repGlob: /jcr:*
+
+       - FOR path IN [/content/we-retail/A1/B2/C3,/content/we-retail/F1]:
+           - path: ${path}
+             permission: allow
+             actions: read,modify,create
+             privileges: 
+             repGlob: 
+
+
+       - path: /content/dam
+         permission: allow
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+       - path: /conf
+         permission: allow
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+       - path: /content/we-retail/language-masters/en
+         permission: allow
+         actions: 
+         privileges: jcr:all
+         repGlob: 
+
+
+
