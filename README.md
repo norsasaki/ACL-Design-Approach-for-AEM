@@ -161,8 +161,8 @@ AC Toolを使えばACLをYAMLとして定義できる
 
 ## the Best Practice is great, but...
 
-But, it tends to be complex if we completely follow this appoarch.
-So, We recommend a simpler desing, which we will describe later.
+でも実際にBest Practiceにしたがって設計するとグループが多くなり複雑になりやすい。
+そのためもっとシンプルな設計案を紹介したい
 
 ## I suggest that the more simplified design
 
@@ -292,4 +292,4 @@ Content Fragmentsは下記の方針で作成する。
     | publisher | read,modify,create,delete |
     | approver  | read,modify,create,delete |
 
-## テスト
+* ケーススタディのサンプルコンフィグはこちらを参照
