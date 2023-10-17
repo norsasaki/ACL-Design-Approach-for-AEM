@@ -59,7 +59,7 @@ See [the slide of adaptTo() 2016](https://adapt.to/2016/presentations/adaptto201
 
 ### 複数グループを組み合わせた時の不具合を防ぐには？
 
-グループAに`dent`ルール、グループBに`allow`ルールが設定がされており、グループA、Bの両方にユーザが所属した場合にACLが競合し期待する動作にならないことが問題となる。
+グループAに`deny`ルール、グループBに`allow`ルールが設定がされており、グループA、Bの両方にユーザが所属した場合にACLが競合し期待する動作にならないことが問題となる。
 ※一番最後に設定されたACLが勝つ
 By default ACEs with denies are sorted up to the top of the list, this follows the best practice to order denies always before allows
 
@@ -67,7 +67,6 @@ By default ACEs with denies are sorted up to the top of the list, this follows t
 * `deny`ルールはトップ階層のノードにのみ定義する
 * 下層階層には`allow`ルールのみを定義し、`deny`ルール使わない
 
-![](./img/README_2023-10-12-13-23-35.png)
 
 #### 実装例
 
@@ -125,7 +124,7 @@ By default ACEs with denies are sorted up to the top of the list, this follows t
 AC Toolを使えばACLをYAMLとして定義できる
 そしてYAMLにはコメントアウトを記述できるので、ACL設計に対してコメントを残すことで、YAMLファイルでACL設計書を代用することができる。
 
-![Alt text](./img/README_2023-10-12-13-23-36.png)
+![Alt text](./img/comment-in-yaml.png)
 
 
 ### 完全性・冪等性を維持したACLのリリース方法
@@ -169,7 +168,7 @@ So, We recommend a simpler desing, which we will describe later.
 
 ![](./img/simplified-approach.drawio.svg)
 
-### A simplified design #1
+### More simplified design #1
 
 Best Practice では、各機能に対応したFunctional Fragmentグループを作成し、ロールグループに必要な機能のみをアサインべきだと言っている。
 しかし、これをプロジェクト毎に設計・実装するのは大変だし、本来はAEM製品側がFunctional Fragmentグループを提供すべきだが、現実そうはなっていない。
@@ -213,10 +212,15 @@ Ref: [User Administration and Security](https://experienceleague.adobe.com/docs/
 ![](./img/priority-of-acl.png)
 
 
+Built-in Groupsの持つACLをリセットできるのはわかった。では、その状態から任意の`allow`ルールを与えるにはどうすれば良いか。
+これはとても簡単で、必要な`allow`ルールをAC Toolsで定義するだけで良い。
+
+ACツールはYAMLファイルの中で定義されている`deny`ルールをまず登録し、その後に`allow`ルールを登録する。
+先述の通り、リストの下に位置するルールが優先されるので、`allow`ルールが優先される。
 
 ### Built-in Groupsを必ず使用しないといけないケース
 
-A simplified design #1にはもう一つメリットがある。
+More simplified design #1にはもう一つメリットがある。
 AEMはACL以外に"特定のグループに所属しているかどうか"を条件に認可制御する場合がある。
 例えば、下記のUIは `workflow-users` に所属する場合のみ表示される。
 そのため Language Copy を正しく使えるようにするためには `workflow-users` に所属する必要がある。
@@ -235,7 +239,7 @@ AEMはACL以外に"特定のグループに所属しているかどうか"を条
 
 Ref: [Render Condition](https://developer.adobe.com/experience-manager/reference-materials/6-5/granite-ui/api/jcr_root/libs/granite/ui/docs/server/rendercondition.html#)
 
-## A simplified design #2
+## More simplified design #2
 
 Best Practice では、Read/write access to contents はcontent groupによって提供されるべきだと言っている。
 基本的に同意するが、下記の点でより実用的なアプローチがあると考える。
@@ -244,7 +248,7 @@ Best Practice では、Read/write access to contents はcontent groupによっ�
 * コンテンツを公開することができるかどうかは直感的には機能観点だが、AEM内部ではACLの１つとして制御される。そのため、公開権限自体はfragment groupではなく、content groupで管理する方が見通しが良い
 
 そこでロールに１対１対応するようにcontent groupを作り、そのグループでそのロールに必要なコンテンツに対するACLを全て管理する方が見通しが良い。
-また、公開権限についてもcontent group で管理する。
+また、公開権限についてもcontent group で管理する方が良い。
 
 ## ケーススタディ | 要件
 
@@ -256,25 +260,6 @@ Best Practice では、Read/write access to contents はcontent groupによっ�
 * ページ公開には必ず承認者の商品が必要
 * ページの編集者はページの作成・更新が可能
 * ページの公開者はページの作成・更新・削除および公開が可能
-
-## ケーススタディ | アーキテクチャ
-
-### ACLの適用順序
-
-* Q. ２つのグループ間で相反するACLが定義されている場合、２つのグループに所属するとどちらのACLが優先されるか。
-* A. 後に設定されたACLが優先される。この性質を利用すると、Built-in　グループ内で定義されているACLを別のグループで定義したACLに書き換えることが可能。(eg. fragment-restrict-for-everyone)
-
-* Q. １つのグループでは `deny jcr:all` が定義され、もう１つのグループでは `allow jcr:read` が定義されている。`allow jcr:read` の方が `deny jcr:all` より後に設定された場合、どのようなACLが有効になるか
-* A. 
-    | privileges | permission |
-    | ---------- | ---------- |
-    | read       | allow      |
-    | modify     | deny       |
-    | create     | deny       |
-    | delete     | deny       |
-    | acl_read   | deny       |
-    | acl_edit   | deny       |
-    | replicate  | deny       |
 
 ## ケーススタディ | Global Fragments
 
@@ -304,7 +289,7 @@ Content Fragmentsは下記の方針で作成する。
     | role      | priviledge                         |
     | --------- | ---------------------------------- |
     | editor    | read,modify,create                 |
-    | publisher | read,modify,create,delete,acl_read |
-    | approver  | read,modify,create,delete,acl_read |
+    | publisher | read,modify,create,delete |
+    | approver  | read,modify,create,delete |
 
 ## テスト
